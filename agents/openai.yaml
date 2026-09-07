@@ -1,0 +1,3 @@
+interface:
+  display_name: "winhand-use（Windows 电脑操作）"
+  short_description: "操控没有 API 的 Windows 原生 app：后台截图取证、UIA/坐标/键盘输入、CDP 零焦点操控"
