@@ -69,6 +69,58 @@ L1 UIA: ✅ 桌面 List（path=2，aid=1）下有 ListItem=桌面图标；47 个
 
 ---
 
-## 待实测（装了就测，测完补）
+## 计算器（Windows 11，UWP / WinUI3）· 实测 2026-09-13
 
-剪映（JianyingPro）、豆包工作（DoubaoWork）、千问办公、微信（Weixin）、WPS、掘金量化终端（goldminer3）——重点记录：Chromium 系判定（进程树/WebView2）、CDP 端口是否可开、UIA editable、输入走哪条、回车语义、后台截图行不行。
+```yaml
+exe: calc.exe（System32 stub，实际进程 CalculatorApp）
+版本: 10.0.26100.8521            # 核对 2026-09-13
+显示名/窗口标题特征: 计算器 / Calculator
+架构: UWP / WinUI3
+L0: ❌ 无 CLI/本地端口；shell:AppsFolder 可启动
+L1 UIA: ✅ 基准实测 elements=62（数字键/运算符都可读）
+输入: UIA Invoke 触发按钮；坐标层可用（控件规整）
+后台截图: ✅ PrintWindow 直接可截（black=0.011）
+借焦点: 用 win show 无激活还原；测试结束按 CalculatorApp/Calculator/calc 关闭自己启动的实例
+坑: probe 需要「系统目录同名 exe」回退才能解析 calc.exe；用户已有计算器时基准自动跳过
+```
+
+## 画图（Windows 11，WinUI3）· 实测 2026-09-13
+
+```yaml
+exe: mspaint.exe
+版本: 11.2605.81.0               # 核对 2026-09-13
+架构: WinUI3
+L0: ❌ 无 CLI/端口；文件参数可打开图片
+L1 UIA: ✅ 基准实测 elements=101（工具栏/画布容器可读）
+后台截图: ✅ PrintWindow 直接可截（black=0.001）
+借焦点: 用 win show 无激活还原；用户已有画图时基准自动跳过
+坑: 纯画布内容没有 UIA 语义，画图内容本身要走坐标/像素层验证
+```
+
+---
+
+## 首轮公开探测矩阵（2026-09-13，只读）
+
+> 由 `benchmarks/run.ps1 -ProbeOnly` 采集。只代表「静态路径 + L0 结构接口」，
+> UIA 与输入路径要等应用运行后另测。`JianyingPro` 本机未安装。
+
+| 应用 | 版本 | Chromium 系 | 已开 CDP | 结论 |
+| --- | --- | --- | --- | --- |
+| notepad | 11.2607.14.0 | ❌ | ❌ | 走 UIA/文件加载；文档区只读 |
+| calc | 10.0.26100.8521 | ❌ | ❌ | UIA 元素齐全，可后台 Invoke |
+| mspaint | 11.2605.81.0 | ❌ | ❌ | UIA 读工具栏；画布内容走坐标层 |
+| explorer | 10.0.26100.8875 | ❌ | ❌ | 桌面截图 + UIA 读图标列表 |
+| msedge | 153.0.4234.32 | ✅ | ✅ | 优先走 CDP（测试时端口 9382） |
+| chrome | 128.1.6541.23 | ✅ | ❌ | 可优先试 CDP；未开调试端口时走 UIA/坐标 |
+| Code | （版本待补） | ❌ | ❌ | Electron 系，按 Chromium 处理，优先 CDP |
+| Weixin | 4.1.13.65 | ✅ | ❌ | Chromium 系，优先 CDP；聊天内容属隐私，只读探测 |
+| DingTalk | 8.1.5.251107001 | ✅ | ❌ | Chromium 系，优先 CDP |
+| wps | 12,1,0,28505 | ❌ | ❌ | 原生系，走 UIA/坐标 |
+| Doubao | 147.0.7727.149 | ✅ | ❌ | Chromium 系，优先 CDP |
+| JianyingPro | — | — | — | 本机未找到，待安装后补测 |
+
+## 待实测（运行后补输入/发送/借焦点四行）
+
+Weixin、DingTalk、WPS、Doubao、Code —— 重点记录：CDP 端口能否由我们来开、
+UIA editable 数量、输入走 UIA / SendInput / 剪贴板哪条、回车语义、后台截图行不行。
+聊天与账号类界面只做只读探测，不加入自动化控制场景。

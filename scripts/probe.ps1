@@ -1,4 +1,4 @@
-#!/usr/bin/env powershell
+﻿#!/usr/bin/env powershell
 # probe.ps1 — 能力探测：接手任何 Windows app 前的第 0 步
 # 用法: probe.ps1 <应用名|exe名|路径>    例: probe.ps1 剪映 / probe.ps1 notepad
 # 只覆盖「静态 + L0 + L1」；输入/发送/借焦点/坑 探不到，实测后补进 references/app档案.md。
@@ -27,6 +27,18 @@ function Resolve-AppPath($name) {
                 if ($v -and (Test-Path $v)) { return $v }
             }
         }
+    }
+    # 回退 1：命令别名 / PATH（calc、mspaint 这类系统别名不一定注册 App Paths）
+    $cmd = Get-Command $name -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($cmd) {
+        foreach ($cand in @($cmd.Path, $cmd.Source, $cmd.Definition)) {
+            if ($cand -and (Test-Path $cand)) { return (Resolve-Path $cand).Path }
+        }
+    }
+    # 回退 2：系统目录同名 exe（Windows 11 的 calc.exe 是 UWP 启动 stub）
+    foreach ($sysDir in @((Join-Path $env:WINDIR 'System32'), (Join-Path $env:WINDIR 'SysWOW64'))) {
+        $cand = Join-Path $sysDir ($name + '.exe')
+        if (Test-Path $cand) { return $cand }
     }
     $lnkDirs = @(
         (Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs'),

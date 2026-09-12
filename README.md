@@ -11,6 +11,10 @@
 > **架构来源**：本项目是 [huashu-mac-use](https://github.com/alchaincyf/huashu-mac-use)（[花叔](https://x.com/AlchainHust)，MIT）的 **Windows 重写版**——
 > 沿用原版「四层控制面、读写分离、动作回读取证」的整套架构与心智，把 macOS 内核（Swift + Accessibility）换成 Windows 原生技术栈（Win32 + UIA + PowerShell），`cdp.js` 原样复用。向原作者的优秀设计致谢。
 
+<br/>
+
+<img src="assets/demo.gif" alt="winhand-use 演示：后台截图、遮挡取证、UIA 写入读回" width="760">
+
 </div>
 
 ## 它解决什么问题
@@ -21,12 +25,22 @@
 2. **读完全后台，写默认零焦点**：窗口被遮挡也能后台截图（PrintWindow）；UIA 直写、UIA Invoke 触发按钮都不碰焦点；判不出生效才借焦点，且要过四道闸（前台/遮挡/在场/全机焦点锁），借到的那半秒屏幕四角闪橙色取景框。
 3. **工具说成功不算数**：动作后自动截图差分 + 读回，回 `effect=confirmed|partial|suspected_noop|unverifiable`；`suspected_noop` 不是失败，是「回去重看」。
 
-## 实测记录（2026-09-07，Windows 11）
+## 实测与公开基准
+
+2026-09-07 手工实测：
 
 - 后台窗口截图（被遮挡可截、DPI 物理像素一致）
 - UIA 读树 / 后台写入 + 读回一致（含中文无损）
 - 端到端沙盒操控：双输入框窗口精确写入指定框 → UIA 触发按钮 → 副作用文件落盘，全程零焦点
 - 退出码三态（0/1/2）供 agent 框架判断
+
+2026-09-13 公开基准（Windows 11 26200 / PowerShell 5.1）：
+
+- **9 pass / 0 fail / 1 skip**；跳过项是用户已有记事本进程，避免打扰
+- 沙箱场景：`see` / `axset` / `axpress` / 遮挡截图 / `--dry` 预演全部通过，动作前后前台窗口均未变化
+- 真实应用：资源管理器桌面、计算器、画图均通过后台截图 + UIA 可读
+- 常用软件探测：11/12 可解析，5 个 Chromium 系，1 个已开 CDP 端口
+- 复现命令与样本：见 [benchmarks/README.md](benchmarks/README.md)，样本报告在 `benchmarks/results/sample/`
 
 ## 前置条件
 
@@ -36,11 +50,27 @@
 
 ## 安装
 
+### 方式一：一条命令（推荐）
+
+```powershell
+# 装到当前项目（生成 .agents/skills/winhand-use 和 skills-lock.json）
+npx skills add zhao-jinping123/winhand-use
+
+# 装到用户级，所有项目可用
+npx skills add zhao-jinping123/winhand-use -g
+```
+
+支持 Codex / Claude Code / Cursor 等 Agent Skills 运行时；
+实测 2026-09-13：仓库能被 `skills` CLI 识别为 1 个 skill 并复制安装成功。
+
+### 方式二：手动克隆
+
 把仓库克隆或复制到目标 runtime 的 skills 目录：
 
 | Runtime | 目录 |
 |---|---|
-| Codex | `~/.codex/skills/winhand-use` |
+| Codex（项目级） | `.agents/skills/winhand-use` |
+| Codex（用户级） | `~/.codex/skills/winhand-use` |
 | Claude Code | `~/.claude/skills/winhand-use` |
 | Cursor | `~/.cursor/skills/winhand-use` |
 | 其它 | 见 `references/多框架适配.md` |
@@ -66,6 +96,9 @@ probe.cmd 记事本
 winhand windows
 winhand shot <目标> 输出.png
 
+# 显示/还原目标窗口，但不抢你的前台焦点
+winhand show <目标>
+
 # 看界面 + UIA 元素表 → 后台写文本 → 后台触发按钮
 winhand see <目标>
 winhand axset <目标> e0 "文本"
@@ -81,6 +114,27 @@ winhand op <目标> 100 200 "文本" @截图.png --dry
 
 发布/付款/删除/覆盖保存等不可逆动作、终端回车、UAC 弹窗、银行/券商/医疗/政务界面——一律交还用户，不绕。
 
+## 公开基准
+
+`benchmarks/` 里的基准不认工具返回值，只认三件事：读回一致、副作用文件落盘、动作前后前台窗口不变。
+
+```powershell
+# 完整基准（沙箱 + 真实应用 + 12 个常用软件探测）
+powershell -NoProfile -ExecutionPolicy Bypass -File benchmarks\run.ps1
+
+# 只跑沙箱
+powershell -NoProfile -ExecutionPolicy Bypass -File benchmarks\run.ps1 -SkipRealApps -SkipProbe
+```
+
+结果输出 `report.json` / `report.md` / 原始截图。当前基准覆盖、场景断言和扩展方法见
+[benchmarks/README.md](benchmarks/README.md)。
+
+开发自检（BOM + PowerShell 语法，GitHub Actions 同款）：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\check.ps1
+```
+
 ## 目录结构
 
 ```text
@@ -92,6 +146,8 @@ winhand-use/
 │   ├── win.cmd / probe.cmd  # 命令入口
 │   ├── probe.ps1            # 第 0 步能力探测
 │   └── cdp.js               # 内嵌 Chromium 的 CDP 工具（复用 huashu-mac-use）
+├── benchmarks/              # 公开基准：沙箱靶标 + 真实应用场景 + 常用软件探测矩阵
+├── assets/                  # demo.gif / demo.mp4 演示素材
 └── references/
     ├── 控制面详解.md / 权限与故障.md / app档案.md
     ├── 取证规范.md / 踩坑实录.md / 多框架适配.md

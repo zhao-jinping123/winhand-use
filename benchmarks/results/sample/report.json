@@ -1,0 +1,245 @@
+﻿{
+    "schema":  "winhand-benchmark/1",
+    "generated_at":  "2026-09-13T00:19:42.0048896+08:00",
+    "machine":  {
+                    "os":  "Microsoft Windows 11 家庭版 中文版 10.0.26200",
+                    "powershell":  "5.1.26100.9444",
+                    "host":  "HP电脑工作台",
+                    "user":  "赵晋平"
+                },
+    "skill":  {
+                  "repo":  "C:\\Users\\赵晋平\\.codex\\skills\\winhand-use",
+                  "commit":  "8970c7e"
+              },
+    "summary":  {
+                    "pass":  9,
+                    "fail":  0,
+                    "skip":  1,
+                    "total":  10,
+                    "duration_ms":  440407
+                },
+    "scenarios":  [
+                      {
+                          "id":  "sandbox.see",
+                          "layer":  "L1",
+                          "status":  "pass",
+                          "detail":  "截图=True black=0.553 editable=2 UIA含双输入框=True 前台未变=True",
+                          "duration_ms":  28073,
+                          "evidence":  [
+                                           "C:\\Users\\赵晋平\\.codex\\skills\\winhand-use\\benchmarks\\results\\20260913-001220\\shots\\sandbox-form-32092.png"
+                                       ]
+                      },
+                      {
+                          "id":  "sandbox.axset",
+                          "layer":  "L1",
+                          "status":  "pass",
+                          "detail":  "selector=e1 写回一致=True effect=confirmed=True 前台未变=True",
+                          "duration_ms":  44283,
+                          "evidence":  [
+
+                                       ]
+                      },
+                      {
+                          "id":  "sandbox.axpress",
+                          "layer":  "L1",
+                          "status":  "pass",
+                          "detail":  "button=e2 副作用落盘=True 内容一致=True 前台未变=True",
+                          "duration_ms":  55454,
+                          "evidence":  [
+                                           "C:\\Users\\赵晋平\\.codex\\skills\\winhand-use\\benchmarks\\results\\20260913-001220\\sandbox-axpress.effect.txt"
+                                       ]
+                      },
+                      {
+                          "id":  "sandbox.occluded_shot",
+                          "layer":  "L3",
+                          "status":  "pass",
+                          "detail":  "遮挡下截图=True black=0.553 截图前后前台未变=True",
+                          "duration_ms":  48808,
+                          "evidence":  [
+                                           "C:\\Users\\赵晋平\\.codex\\skills\\winhand-use\\benchmarks\\results\\20260913-001220\\shots\\occluded-sandbox.png"
+                                       ]
+                      },
+                      {
+                          "id":  "sandbox.op_dry",
+                          "layer":  "L2",
+                          "status":  "pass",
+                          "detail":  "dry预演可见=True 未执行副作用=True 前台未变=True exit=0",
+                          "duration_ms":  26003,
+                          "evidence":  [
+
+                                       ]
+                      },
+                      {
+                          "id":  "real.explorer_desktop",
+                          "layer":  "L1/L3",
+                          "status":  "pass",
+                          "detail":  "桌面截图=True black=0.005 UIA可读=True",
+                          "duration_ms":  15993,
+                          "evidence":  [
+                                           "C:\\Users\\赵晋平\\.codex\\skills\\winhand-use\\benchmarks\\results\\20260913-001220\\shots\\explorer-desktop.png"
+                                       ]
+                      },
+                      {
+                          "id":  "real.notepad",
+                          "layer":  "L0/L1",
+                          "status":  "skip",
+                          "detail":  "用户已有记事本进程，跳过以避免干扰",
+                          "duration_ms":  17,
+                          "evidence":  [
+
+                                       ]
+                      },
+                      {
+                          "id":  "real.calculator",
+                          "layer":  "L1/L3",
+                          "status":  "pass",
+                          "detail":  "后台截图=True black=0.011 UIA元素=62",
+                          "duration_ms":  32024,
+                          "evidence":  [
+                                           "C:\\Users\\赵晋平\\.codex\\skills\\winhand-use\\benchmarks\\results\\20260913-001220\\shots\\calculator.png"
+                                       ]
+                      },
+                      {
+                          "id":  "real.mspaint",
+                          "layer":  "L1/L3",
+                          "status":  "pass",
+                          "detail":  "后台截图=True black=0.001 UIA元素=101",
+                          "duration_ms":  36777,
+                          "evidence":  [
+                                           "C:\\Users\\赵晋平\\.codex\\skills\\winhand-use\\benchmarks\\results\\20260913-001220\\shots\\mspaint.png"
+                                       ]
+                      },
+                      {
+                          "id":  "probe.matrix",
+                          "layer":  "L0/L1",
+                          "status":  "pass",
+                          "detail":  "探测 11/12 可解析，探针错误=0，Chromium=5 CDP=1",
+                          "duration_ms":  152325,
+                          "evidence":  [
+
+                                       ]
+                      }
+                  ],
+    "probe_matrix":  [
+                         {
+                             "app":  "notepad",
+                             "found":  true,
+                             "path":  "C:\\Program Files\\WindowsApps\\Microsoft.WindowsNotepad_11.2607.14.0_x64__8wekyb3d8bbwe\\Notepad\\Notepad.exe",
+                             "version":  "11.2607.14.0",
+                             "chromium":  false,
+                             "cdp":  false,
+                             "note":  "",
+                             "exit_code":  0
+                         },
+                         {
+                             "app":  "calc",
+                             "found":  true,
+                             "path":  "C:\\windows\\system32\\calc.exe",
+                             "version":  "10.0.26100.8521 (WinBuild.160101.0800)",
+                             "chromium":  false,
+                             "cdp":  false,
+                             "note":  "",
+                             "exit_code":  0
+                         },
+                         {
+                             "app":  "mspaint",
+                             "found":  true,
+                             "path":  "C:\\Program Files\\WindowsApps\\Microsoft.Paint_11.2605.81.0_x64__8wekyb3d8bbwe\\PaintApp\\mspaint.exe",
+                             "version":  "11.2605.81.0",
+                             "chromium":  false,
+                             "cdp":  false,
+                             "note":  "",
+                             "exit_code":  0
+                         },
+                         {
+                             "app":  "explorer",
+                             "found":  true,
+                             "path":  "C:\\windows\\Explorer.EXE",
+                             "version":  "10.0.26100.8875 (WinBuild.160101.0800)",
+                             "chromium":  false,
+                             "cdp":  false,
+                             "note":  "",
+                             "exit_code":  0
+                         },
+                         {
+                             "app":  "msedge",
+                             "found":  true,
+                             "path":  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+                             "version":  "153.0.4234.32",
+                             "chromium":  true,
+                             "cdp":  true,
+                             "note":  "",
+                             "exit_code":  0
+                         },
+                         {
+                             "app":  "chrome",
+                             "found":  true,
+                             "path":  "C:\\Users\\赵晋平\\AppData\\Local\\GeminiBrowser\\GeminiBrowser.exe",
+                             "version":  "128.1.6541.23",
+                             "chromium":  true,
+                             "cdp":  false,
+                             "note":  "",
+                             "exit_code":  0
+                         },
+                         {
+                             "app":  "Code",
+                             "found":  true,
+                             "path":  "C:\\Users\\赵晋平\\AppData\\Local\\OpenAI\\Codex\\bin\\bffc5354119c8421\\codex.exe",
+                             "version":  "",
+                             "chromium":  false,
+                             "cdp":  false,
+                             "note":  "",
+                             "exit_code":  0
+                         },
+                         {
+                             "app":  "Weixin",
+                             "found":  true,
+                             "path":  "C:\\Program Files\\Tencent\\WeChat\\Weixin.exe",
+                             "version":  "4.1.13.65",
+                             "chromium":  true,
+                             "cdp":  false,
+                             "note":  "",
+                             "exit_code":  0
+                         },
+                         {
+                             "app":  "DingTalk",
+                             "found":  true,
+                             "path":  "C:\\Program Files (x86)\\DingDing\\main\\current_new\\DingTalk.exe",
+                             "version":  "8.1.5.251107001",
+                             "chromium":  true,
+                             "cdp":  false,
+                             "note":  "",
+                             "exit_code":  0
+                         },
+                         {
+                             "app":  "wps",
+                             "found":  true,
+                             "path":  "C:\\Program Files (x86)\\Kingsoft Office Software\\WPS Office\\12.1.0.28505\\office6\\wps.exe",
+                             "version":  "12,1,0,28505",
+                             "chromium":  false,
+                             "cdp":  false,
+                             "note":  "",
+                             "exit_code":  0
+                         },
+                         {
+                             "app":  "JianyingPro",
+                             "found":  false,
+                             "path":  "",
+                             "version":  "",
+                             "chromium":  false,
+                             "cdp":  false,
+                             "note":  "未找到应用",
+                             "exit_code":  1
+                         },
+                         {
+                             "app":  "Doubao",
+                             "found":  true,
+                             "path":  "C:\\Users\\赵晋平\\AppData\\Local\\Doubao\\Application\\app\\Doubao.exe",
+                             "version":  "147.0.7727.149",
+                             "chromium":  true,
+                             "cdp":  false,
+                             "note":  "",
+                             "exit_code":  0
+                         }
+                     ]
+}

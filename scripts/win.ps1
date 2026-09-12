@@ -345,6 +345,36 @@ switch ($cmd) {
         break
     }
 
+    # ---------- win show <目标> [--above <参照目标>] ----------
+    'show' {
+        $target = $rest[0]
+        if (-not $target) { Write-Output '用法: win show <目标> [--above <参照目标>]'; break }
+        $info = Resolve-Target $target
+        if (-not $info) { break }
+        $above = $null
+        for ($i = 1; $i -lt $rest.Count; $i++) {
+            if ($rest[$i] -eq '--above') { $above = $rest[++$i] }
+        }
+        $r = [WinUseNative]::ShowNoActivate($info.Hwnd)
+        if ($r -notlike 'ok*') {
+            Write-Output ('show=' + $r)
+            $script:WIN_EXIT = 1
+            break
+        }
+        Write-Output ('show=' + $r)
+        if ($above) {
+            $aboveInfo = Resolve-Target $above
+            if ($aboveInfo) {
+                Write-Output ('above=' + [WinUseNative]::PlaceAboveNoActivate($info.Hwnd, $aboveInfo.Hwnd))
+            }
+        }
+        $hwndStr = '0x' + $info.Hwnd.ToInt64().ToString('X')
+        $fresh = Resolve-Target $hwndStr
+        if ($fresh) { Write-Output ([WinUseNative]::WindowInfoLine($fresh)) }
+        $script:WIN_EXIT = 0
+        break
+    }
+
     # ---------- win idle ----------
     'idle' {
         $idle = [WinUseNative]::IdleMilliseconds()

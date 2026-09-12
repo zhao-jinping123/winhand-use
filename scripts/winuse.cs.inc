@@ -59,6 +59,7 @@ public static class WinUseNative
     [DllImport("user32.dll")] private static extern bool SetForegroundWindow(IntPtr hWnd);
     [DllImport("user32.dll")] private static extern bool BringWindowToTop(IntPtr hWnd);
     [DllImport("user32.dll")] private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+    [DllImport("user32.dll")] private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
     [DllImport("user32.dll")] private static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
     [DllImport("kernel32.dll")] private static extern uint GetCurrentThreadId();
     [DllImport("user32.dll")] private static extern bool SetCursorPos(int X, int Y);
@@ -94,6 +95,11 @@ public static class WinUseNative
     private const uint WM_SETTEXT = 0x000C;
     private const uint MK_LBUTTON = 0x0001;
     private const int SW_RESTORE = 9;
+    private const int SW_SHOWNOACTIVATE = 4;
+    private const uint SWP_NOSIZE = 0x0001;
+    private const uint SWP_NOMOVE = 0x0002;
+    private const uint SWP_NOACTIVATE = 0x0010;
+    private const uint SWP_SHOWWINDOW = 0x0040;
 
     // 清理标题里的零宽/方向控制字符（网页标题常带，会污染 agent 的文本解析）
     private static string CleanTitle(string s)
@@ -239,6 +245,32 @@ public static class WinUseNative
     {
         IntPtr fg = GetForegroundWindow();
         return fg == hwnd || fg == GetAncestor(hwnd, GA_ROOT);
+    }
+
+    // 显示/还原窗口但不抢焦点：最小化窗口先用 SW_SHOWNOACTIVATE 还原，
+    // 再以 SWP_NOACTIVATE 强制显示，保证用户当前前台窗口不变。
+    public static string ShowNoActivate(IntPtr hwnd)
+    {
+        if (!IsWindow(hwnd)) return "fail:not-a-window";
+        bool iconic = IsIconic(hwnd);
+        if (iconic) ShowWindow(hwnd, SW_SHOWNOACTIVATE);
+        bool ok = SetWindowPos(
+            hwnd, IntPtr.Zero, 0, 0, 0, 0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW
+        );
+        return string.Format("ok was_iconic={0} setpos={1}", iconic, ok);
+    }
+
+    // 把 hwnd 放到 belowHwnd 正上方，但不激活任何一方。
+    // 用途：受控遮挡取证（验证 PrintWindow 在窗口被盖住时仍能截图）。
+    public static string PlaceAboveNoActivate(IntPtr hwnd, IntPtr belowHwnd)
+    {
+        if (!IsWindow(hwnd) || !IsWindow(belowHwnd)) return "fail:not-a-window";
+        bool ok = SetWindowPos(
+            hwnd, belowHwnd, 0, 0, 0, 0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW
+        );
+        return ok ? "ok" : "fail:setwindowpos";
     }
 
     public static bool BringToFront(IntPtr hwnd)
