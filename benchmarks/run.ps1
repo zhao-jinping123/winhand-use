@@ -8,6 +8,7 @@ param(
     [switch]$SkipRealApps,
     [switch]$SkipProbe,
     [switch]$ProbeOnly,
+    [switch]$IncludeCdpAttach,
     [string[]]$Only = @()
 )
 
@@ -437,6 +438,28 @@ if ((-not $SkipRealApps) -and (-not $ProbeOnly)) {
             Status = $(if ($ok) { 'pass' } else { 'fail' })
             Detail = ('桌面截图={0} black={1} UIA可读={2}' -f (Test-Path -LiteralPath $png), $info.Black, ($ax.Text -match 'uia=on'))
             Evidence = @($png)
+        }
+    }
+
+    if ($IncludeCdpAttach) {
+        Invoke-Scenario -Id 'real.cdp_attach' -Layer 'L0' -Body {
+            $probe = Invoke-Probe 'msedge'
+            $portMatch = [regex]::Match($probe.Text, '端口\s+(\d+)\s*=\s*CDP')
+            if (-not $portMatch.Success) {
+                return [pscustomobject]@{ Status = 'skip'; Detail = 'msedge 未以 CDP 端口运行（只读基准不主动重启用户浏览器）'; Evidence = @() }
+            }
+            $port = $portMatch.Groups[1].Value
+            $fgBefore = Get-ForegroundHwnd
+            $count = (& node $CdpJs $port count 2>&1) -join "`n"
+            $code = $LASTEXITCODE
+            $fgAfter = Get-ForegroundHwnd
+            $m = [regex]::Match($count, 'pages=(\d+)')
+            $ok = $code -eq 0 -and $m.Success -and [int]$m.Groups[1].Value -ge 1
+            [pscustomobject]@{
+                Status = $(if ($ok) { 'pass' } else { 'fail' })
+                Detail = ('CDP端口={0} pages={1} exit={2} 前台未变={3}（只记录数量，不读取标题/URL/页面内容）' -f $port, $(if ($m.Success) { $m.Groups[1].Value } else { '?' }), $code, ($fgBefore -eq $fgAfter))
+                Evidence = @()
+            }
         }
     }
 

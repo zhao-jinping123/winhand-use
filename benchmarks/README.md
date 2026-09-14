@@ -30,6 +30,7 @@
 | `sandbox.op_dry` | L2 | `op --dry` 能给出预演结论；不产生副作用；前台不变 |
 | `sandbox.cdp_flow` | L0 | 无头 Edge + 本地页面：`wait` → `text` 写值 → `click` → `eval` 读回 `state=saved` → `shot` 截图；前台不变 |
 | `real.explorer_desktop` | L1/L3 | 桌面窗口可后台截图、UIA 可读 |
+| `real.cdp_attach`（opt-in） | L0 | 本机 Edge 已开 CDP 时，只统计页面数量（`pages=N`），不读标题/URL/内容；依赖用户浏览器状态，默认不跑 |
 | `real.calculator` | L1/L3 | 新实例最小化启动、无激活显示、后台截图成功、UIA 可读 |
 | `real.mspaint` | L1/L3 | 同上（画图） |
 | `real.notepad` | L0/L1 | 新实例测试；若用户已有记事本进程则跳过 |
@@ -53,6 +54,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File benchmarks\run.ps1 -SkipReal
 
 # 只跑常用软件探测矩阵
 powershell -NoProfile -ExecutionPolicy Bypass -File benchmarks\run.ps1 -ProbeOnly
+
+# 额外跑真实 Chromium 客户端 CDP 挂载（需要本机 Edge 已开调试端口）
+powershell -NoProfile -ExecutionPolicy Bypass -File benchmarks\run.ps1 -IncludeCdpAttach
+
+# 或者只跑这一个场景
+powershell -NoProfile -ExecutionPolicy Bypass -File benchmarks\run.ps1 -Only real.cdp_attach -SkipProbe
 ```
 
 结果写到 `benchmarks/results/<时间戳>/`：
@@ -77,6 +84,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File benchmarks\run.ps1 -ProbeOnl
 结果绑定机器与应用版本：Windows 版本、DPI、应用版本一变，坐标类结论就要重测；
 行为层结论（UIA 能不能用、CDP 端口、输入路径）相对耐用。样例会随仓库提交一份，
 在 `results/sample/`。
+
+`real.cdp_attach` 是 opt-in：它依赖“用户本机正好有一个开了 CDP 端口的 Chromium 应用”，
+不放进默认样本；脚本只调用 `cdp.js count`，报告里只出现页面数量。
 
 性能参考：常用软件探测矩阵最初串行执行 12 个 `probe.ps1` 要 573 秒；
 改成每批 6 个受控并发后降到约 183–199 秒（同一台机器、同一组应用，视负载波动），结果不变。

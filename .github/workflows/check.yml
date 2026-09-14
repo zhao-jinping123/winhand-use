@@ -15,6 +15,7 @@ jobs:
       - name: Check Node syntax
         shell: pwsh
         run: |
+          node --check scripts/cdp.js
           node --check mcp/server.js
           node --check mcp/selftest.js
           node -e "JSON.parse(require('fs').readFileSync('mcp/package.json','utf8'))"

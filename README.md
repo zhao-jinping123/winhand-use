@@ -38,7 +38,7 @@
 
 - **10 pass / 0 fail / 1 skip**；跳过项是用户已有记事本进程，避免打扰
 - 沙箱场景：`see` / `axset` / `axpress` / 遮挡截图 / `--dry` 预演 / L0 CDP 全链路全部通过
-- 真实应用：资源管理器桌面、计算器、画图均通过后台截图 + UIA 可读
+- 真实应用：资源管理器桌面、计算器、画图均通过后台截图 + UIA 可读；另有 opt-in 的真实 Chromium 客户端 CDP 挂载（只统计页面数量，不读内容）
 - 常用软件探测：11/12 可解析，5 个 Chromium 系，1 个已开 CDP 端口
 - 复现命令与样本：见 [benchmarks/README.md](benchmarks/README.md)，样本报告在 `benchmarks/results/sample/`
 
@@ -110,6 +110,10 @@ winhand op <目标> 100 200 "文本" @截图.png --dry
 
 完整命令表、四层控制面详解、停手线、取证回流规则见 `SKILL.md` 与 `references/`。
 
+内嵌 Chromium 的桌面客户端（微信 4.x / 钉钉 / 豆包 / VS Code 等）优先走 CDP：
+接入方式、常见客户端状态和隐私边界见 [references/CDP接入.md](references/CDP接入.md)。
+注意：本技能只操作**电脑桌面客户端**，不能控制手机微信/钉钉。
+
 ## MCP Server（给 MCP 客户端）
 
 不想装 skill、只想让 Agent 直接调用工具？仓库自带零依赖 MCP Server，
@@ -172,7 +176,7 @@ winhand-use/
 ├── mcp/                     # 零依赖 MCP Server（18 个工具 + 自测）
 └── references/
     ├── 控制面详解.md / 权限与故障.md / app档案.md
-    ├── 取证规范.md / 踩坑实录.md / 多框架适配.md
+    ├── CDP接入.md / 取证规范.md / 踩坑实录.md / 多框架适配.md
 ```
 
 ## 许可

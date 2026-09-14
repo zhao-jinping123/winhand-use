@@ -119,6 +119,7 @@ cdp.js <端口> list|snapshot|find|wait|mouse|insert|press|shot|eval|act   （�
 | 各 agent 框架安装位置、win doctor、跨框架坑 | `references/多框架适配.md` |
 | 命名、目录、合规、跑批 | `references/取证规范.md` |
 | 控制层原理、坐标系、CDP 接法、输入路径对比 | `references/控制面详解.md` |
+| CDP 接入桌面客户端（微信/钉钉/豆包等；不涉及手机） | `references/CDP接入.md` |
 | 移植翻车实录（为什么工具长这样） | `references/踩坑实录.md` |
 
 ## 版本自检（静默）

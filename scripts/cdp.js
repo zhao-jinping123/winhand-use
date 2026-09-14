@@ -12,6 +12,7 @@
 //
 // 用法：
 //   node cdp.js <port> list
+//   node cdp.js <port> count                            # 只输出页面数量，不打印标题/URL（隐私安全）
 //   node cdp.js <port> snapshot <target> [--all]        # 列出可交互元素并打 ref（默认只列视口内可见）
 //   node cdp.js <port> find  <target> '<文本>' [--role button] [--all]   # 按文本/aria-label/placeholder 模糊找元素
 //   node cdp.js <port> wait  <target> <条件> [超时秒=10]  # 条件: css选择器 | text:<文本> | gone:<选择器>
@@ -478,6 +479,12 @@ async function main() {
 
   if (cmd === 'list' || !cmd) {
     for (const t of targets) console.log(`${t.type}\t${t.id}\t${(t.title || '').slice(0, 40)}\t${t.url.slice(0, 80)}`);
+    return;
+  }
+
+  if (cmd === 'count') {
+    const pages = targets.filter(t => t.type === 'page');
+    console.log(`pages=${pages.length} total=${targets.length}`);
     return;
   }
 
