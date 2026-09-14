@@ -1,0 +1,16 @@
+{
+  "name": "winhand-use-mcp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MCP server for winhand-use: operate Windows apps from any MCP-capable agent.",
+  "type": "commonjs",
+  "bin": {
+    "winhand-use-mcp": "server.js"
+  },
+  "scripts": {
+    "selftest": "node selftest.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

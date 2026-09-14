@@ -17,6 +17,7 @@
 
 - `sandbox-form.exe`：两个可 UIA 写入的输入框 + 一个 UIA 按钮 + 一块纯自绘画布（无 UIA，只能走坐标层）。
 - `cover-window.exe`：置顶遮挡层，用来验证“窗口被完全盖住时 PrintWindow 仍能截图”。
+- `cdp-sandbox.html`：本地 Chromium 页面，配合无头 Edge 验证 L0 CDP 全链路（不碰用户正在用的浏览器）。
 
 真实应用场景只读或用完即关，且在用户已有同名进程时自动跳过，避免干扰：
 
@@ -27,6 +28,7 @@
 | `sandbox.axpress` | L1 | UIA 触发按钮后副作用文件落盘且内容一致；前台不变 |
 | `sandbox.occluded_shot` | L3 | 靶标被遮挡层完全盖住时截图仍非黑；截图前后前台不变 |
 | `sandbox.op_dry` | L2 | `op --dry` 能给出预演结论；不产生副作用；前台不变 |
+| `sandbox.cdp_flow` | L0 | 无头 Edge + 本地页面：`wait` → `text` 写值 → `click` → `eval` 读回 `state=saved` → `shot` 截图；前台不变 |
 | `real.explorer_desktop` | L1/L3 | 桌面窗口可后台截图、UIA 可读 |
 | `real.calculator` | L1/L3 | 新实例最小化启动、无激活显示、后台截图成功、UIA 可读 |
 | `real.mspaint` | L1/L3 | 同上（画图） |
@@ -65,12 +67,19 @@ powershell -NoProfile -ExecutionPolicy Bypass -File benchmarks\run.ps1 -ProbeOnl
 - `fail`：断言不成立，必须修。
 - `skip`：不满足安全前提（例如用户已有同名应用进程），不算通过也不算失败。
 
+关于“不打扰用户”的断言：UIA 读写与 CDP 场景检查的是**动作输出里没有借焦点/HUD 痕迹**
+（即动作本身没有请求前台焦点）。动作前后前台窗口是否变化会作为参考数据记录，但不作为硬失败条件——
+活桌面上用户自己的点击、输入法、通知弹窗都会改变前台窗口，直接比较会误判。
+
 时间是参考值：当前每个 `win` 命令都会启动一个 Windows PowerShell 5.1 进程，
 单次调用有 1-3 秒固定开销，所以沙箱场景的耗时主要来自进程启动，不代表操作本身的延迟。
 
 结果绑定机器与应用版本：Windows 版本、DPI、应用版本一变，坐标类结论就要重测；
 行为层结论（UIA 能不能用、CDP 端口、输入路径）相对耐用。样例会随仓库提交一份，
 在 `results/sample/`。
+
+性能参考：常用软件探测矩阵最初串行执行 12 个 `probe.ps1` 要 573 秒；
+改成每批 6 个受控并发后降到约 183–199 秒（同一台机器、同一组应用，视负载波动），结果不变。
 
 ## 加一个新应用
 

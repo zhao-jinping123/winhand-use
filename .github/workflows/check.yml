@@ -12,3 +12,12 @@ jobs:
       - name: Check PowerShell encoding and syntax
         shell: powershell
         run: .\scripts\check.ps1
+      - name: Check Node syntax
+        shell: pwsh
+        run: |
+          node --check mcp/server.js
+          node --check mcp/selftest.js
+          node -e "JSON.parse(require('fs').readFileSync('mcp/package.json','utf8'))"
+      - name: MCP server selftest
+        shell: pwsh
+        run: node mcp/selftest.js

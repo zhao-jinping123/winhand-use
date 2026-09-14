@@ -7,7 +7,8 @@ param(
     [string]$OutDir = '',
     [switch]$SkipRealApps,
     [switch]$SkipProbe,
-    [switch]$ProbeOnly
+    [switch]$ProbeOnly,
+    [string[]]$Only = @()
 )
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -17,6 +18,7 @@ $ErrorActionPreference = 'Continue'
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 $Win = Join-Path $RepoRoot 'scripts\win.ps1'
 $Probe = Join-Path $RepoRoot 'scripts\probe.ps1'
+$CdpJs = Join-Path $RepoRoot 'scripts\cdp.js'
 $Targets = Join-Path $PSScriptRoot 'targets'
 $BuildTargets = Join-Path $Targets 'build-targets.ps1'
 
@@ -32,6 +34,7 @@ $script:FailCount = 0
 $script:SkipCount = 0
 $script:PassCount = 0
 $script:RunStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+$script:Only = @($Only)
 
 function Invoke-Win {
     param([string[]]$WinArgs)
@@ -77,6 +80,13 @@ function Get-ForegroundHwnd {
     return ''
 }
 
+function Get-IdleMs {
+    $r = Invoke-Win @('idle')
+    $m = [regex]::Match($r.Text, '键鼠空闲=([0-9.]+)')
+    if ($m.Success) { return [int]([double]$m.Groups[1].Value * 1000) }
+    return -1
+}
+
 function Get-ShotInfo {
     param([string]$Text)
     $black = [regex]::Match($Text, 'black=([0-9.]+)')
@@ -87,6 +97,15 @@ function Get-ShotInfo {
         Path = $(if ($path.Success) { $path.Groups[1].Value.Trim() } else { '' })
         Size = $(if ($size.Success) { $size.Groups[1].Value } else { '' })
     }
+}
+
+function Get-FreePort {
+    param([int]$Start = 9339)
+    for ($p = $Start; $p -lt ($Start + 50); $p++) {
+        $used = Get-NetTCPConnection -LocalPort $p -State Listen -ErrorAction SilentlyContinue
+        if (-not $used) { return $p }
+    }
+    return 0
 }
 
 function Select-Element {
@@ -129,6 +148,7 @@ function Add-Result {
 
 function Invoke-Scenario {
     param([string]$Id, [string]$Layer, [scriptblock]$Body)
+    if ($script:Only.Count -gt 0 -and $script:Only -notcontains $Id) { return }
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     try {
         $r = & $Body
@@ -165,9 +185,12 @@ function Start-Sandbox {
         throw '沙箱窗口 9 秒内没有出现'
     }
     # 用 show 无激活还原，保证用户当前前台窗口不被测试靶标抢走。
-    Invoke-Win @('show', $info.Hwnd) | Out-Null
-    Start-Sleep -Milliseconds 400
-    $info = Find-Window 'winhand-bench-sandbox'
+    $restored = Wait-SandboxRestored $info.Hwnd
+    if (-not $restored) {
+        Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+        throw '沙箱窗口无法从最小化恢复（win show 失败）'
+    }
+    $info = $restored
     [pscustomobject]@{
         Proc = $p
         Hwnd = $info.Hwnd
@@ -184,6 +207,22 @@ function Stop-Sandbox {
     }
 }
 
+function Wait-SandboxRestored {
+    param([string]$Hwnd)
+    for ($i = 0; $i -lt 4; $i++) {
+        $info = Find-Window 'winhand-bench-sandbox'
+        if ($info -and $info.Hwnd) {
+            $m = [regex]::Match($info.Line, 'min=(\d)')
+            if ($m.Success -and [int]$m.Groups[1].Value -eq 0 -and $info.Width -ge 500) {
+                return $info
+            }
+        }
+        Invoke-Win @('show', $Hwnd) | Out-Null
+        Start-Sleep -Milliseconds 500
+    }
+    return $null
+}
+
 Write-Host '编译基准靶标...'
 & powershell -NoProfile -ExecutionPolicy Bypass -File $BuildTargets | Out-Null
 
@@ -198,7 +237,9 @@ Invoke-Scenario -Id 'sandbox.see' -Layer 'L1' -Body {
         $r = Invoke-Win @('see', $ctx.Hwnd, '--out', $Shots)
         $shot = Get-ShotInfo $r.Text
         $editable = [regex]::Match($r.Text, 'editable=(\d+)')
-        $shotOk = $shot.Path -and (Test-Path -LiteralPath $shot.Path) -and $shot.Black -ge 0 -and $shot.Black -lt 0.99
+        $sizeMatch = [regex]::Match($shot.Size, '^(\d+)x(\d+)$')
+        $shotOk = $shot.Path -and (Test-Path -LiteralPath $shot.Path) -and $shot.Black -ge 0 -and $shot.Black -lt 0.95 -and
+            $sizeMatch.Success -and [int]$sizeMatch.Groups[1].Value -ge 500 -and (Get-Item -LiteralPath $shot.Path).Length -gt 8000
         $uiOk = $editable.Success -and [int]$editable.Groups[1].Value -ge 2 -and $r.Text -match 'inputA' -and $r.Text -match 'inputB'
         $fgAfter = Get-ForegroundHwnd
         $status = $(if ($shotOk -and $uiOk) { 'pass' } else { 'fail' })
@@ -218,14 +259,18 @@ Invoke-Scenario -Id 'sandbox.axset' -Layer 'L1' -Body {
         $sel = Select-Element $ax.Text 'inputB'
         $text = '基准写入-20260912'
         $fgBefore = Get-ForegroundHwnd
+        $idleBefore = Get-IdleMs
         $write = Invoke-Win @('axset', $ctx.Hwnd, $sel, $text)
         Start-Sleep -Milliseconds 300
         $read = Invoke-Win @('ax', $ctx.Hwnd, 'inputB')
         $fgAfter = Get-ForegroundHwnd
+        $idleAfter = Get-IdleMs
+        $userBusy = $idleAfter -ge 0 -and $idleAfter -lt 2000
         $ok = $sel -and $read.Text -match [regex]::Escape($text) -and $write.Text -match 'effect=confirmed'
+        $borrowed = $write.Text -match 'HUD|借焦点'
         [pscustomobject]@{
-            Status = $(if ($ok) { 'pass' } else { 'fail' })
-            Detail = ('selector={0} 写回一致={1} effect=confirmed={2} 前台未变={3}' -f $sel, ($read.Text -match [regex]::Escape($text)), ($write.Text -match 'effect=confirmed'), ($fgBefore -eq $fgAfter))
+            Status = $(if ($ok -and (-not $borrowed)) { 'pass' } else { 'fail' })
+            Detail = ('selector={0} 写回一致={1} effect=confirmed={2} 未借焦点={3} 前台未变={4} 用户活动={5} idle_before={6}ms idle_after={7}ms' -f $sel, ($read.Text -match [regex]::Escape($text)), ($write.Text -match 'effect=confirmed'), (-not $borrowed), ($fgBefore -eq $fgAfter), $userBusy, $idleBefore, $idleAfter)
             Evidence = @()
         }
     }
@@ -242,14 +287,18 @@ Invoke-Scenario -Id 'sandbox.axpress' -Layer 'L1' -Body {
         $textA = '按钮落盘-20260912'
         Invoke-Win @('axset', $ctx.Hwnd, $selA, $textA) | Out-Null
         $fgBefore = Get-ForegroundHwnd
+        $idleBefore = Get-IdleMs
         $press = Invoke-Win @('axpress', $ctx.Hwnd, $selBtn)
         Start-Sleep -Milliseconds 600
         $effectText = $(if (Test-Path -LiteralPath $ctx.Effect) { [System.IO.File]::ReadAllText($ctx.Effect, [System.Text.Encoding]::UTF8) } else { '' })
         $fgAfter = Get-ForegroundHwnd
-        $ok = $selBtn -and $effectText -match 'state=saved' -and $effectText -match [regex]::Escape($textA) -and ($fgBefore -eq $fgAfter)
+        $idleAfter = Get-IdleMs
+        $userBusy = $idleAfter -ge 0 -and $idleAfter -lt 2000
+        $ok = $selBtn -and $effectText -match 'state=saved' -and $effectText -match [regex]::Escape($textA)
+        $borrowed = $press.Text -match 'HUD|借焦点'
         [pscustomobject]@{
-            Status = $(if ($ok) { 'pass' } else { 'fail' })
-            Detail = ('button={0} 副作用落盘={1} 内容一致={2} 前台未变={3}' -f $selBtn, ($effectText -match 'state=saved'), ($effectText -match [regex]::Escape($textA)), ($fgBefore -eq $fgAfter))
+            Status = $(if ($ok -and (-not $borrowed)) { 'pass' } else { 'fail' })
+            Detail = ('button={0} 副作用落盘={1} 内容一致={2} 未借焦点={3} 前台未变={4} 用户活动={5} idle_before={6}ms idle_after={7}ms' -f $selBtn, ($effectText -match 'state=saved'), ($effectText -match [regex]::Escape($textA)), (-not $borrowed), ($fgBefore -eq $fgAfter), $userBusy, $idleBefore, $idleAfter)
             Evidence = @($ctx.Effect)
         }
     }
@@ -272,15 +321,19 @@ Invoke-Scenario -Id 'sandbox.occluded_shot' -Layer 'L3' -Body {
             Invoke-Win @('show', $coverInfo.Hwnd, '--above', $ctx.Hwnd) | Out-Null
         }
         Start-Sleep -Milliseconds 600
+        $sandboxNow = Wait-SandboxRestored $ctx.Hwnd
+        if (-not $sandboxNow) { throw '遮挡测试前沙箱窗口未恢复（win show 失败）' }
         $fgBefore = Get-ForegroundHwnd
         $png = Join-Path $Shots 'occluded-sandbox.png'
         $r = Invoke-Win @('shot', $ctx.Hwnd, $png)
         $shot = Get-ShotInfo $r.Text
         $fgAfter = Get-ForegroundHwnd
-        $ok = (Test-Path -LiteralPath $png) -and $shot.Black -ge 0 -and $shot.Black -lt 0.99
+        $sizeMatch = [regex]::Match($shot.Size, '^(\d+)x(\d+)$')
+        $shotOk = (Test-Path -LiteralPath $png) -and $shot.Black -ge 0.05 -and $shot.Black -lt 0.95 -and
+            $sizeMatch.Success -and [int]$sizeMatch.Groups[1].Value -ge 500 -and (Get-Item -LiteralPath $png).Length -gt 8000
         [pscustomobject]@{
-            Status = $(if ($ok) { 'pass' } else { 'fail' })
-            Detail = ('遮挡下截图={0} black={1} 截图前后前台未变={2}' -f (Test-Path -LiteralPath $png), $shot.Black, ($fgBefore -eq $fgAfter))
+            Status = $(if ($shotOk) { 'pass' } else { 'fail' })
+            Detail = ('遮挡下截图={0} size={1} black={2} bytes={3} 截图前后前台未变={4}' -f (Test-Path -LiteralPath $png), $shot.Size, $shot.Black, $(if (Test-Path -LiteralPath $png) { (Get-Item -LiteralPath $png).Length } else { 0 }), ($fgBefore -eq $fgAfter))
             Evidence = @($png)
         }
     }
@@ -305,6 +358,62 @@ Invoke-Scenario -Id 'sandbox.op_dry' -Layer 'L2' -Body {
         }
     }
     finally { Stop-Sandbox $ctx }
+}
+
+Invoke-Scenario -Id 'sandbox.cdp_flow' -Layer 'L0' -Body {
+    $edgeCandidates = @(
+        (Join-Path ${env:ProgramFiles(x86)} 'Microsoft\Edge\Application\msedge.exe'),
+        (Join-Path $env:ProgramFiles 'Microsoft\Edge\Application\msedge.exe'),
+        (Join-Path $env:LOCALAPPDATA 'Microsoft\Edge\Application\msedge.exe')
+    )
+    $edge = @($edgeCandidates | Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -First 1)[0]
+    if (-not $edge) {
+        return [pscustomobject]@{ Status = 'skip'; Detail = '本机没有找到 msedge.exe'; Evidence = @() }
+    }
+    $port = Get-FreePort 9339
+    if ($port -eq 0) {
+        return [pscustomobject]@{ Status = 'skip'; Detail = '9339-9388 没有空闲端口'; Evidence = @() }
+    }
+    $page = Join-Path $Targets 'cdp-sandbox.html'
+    $url = 'file:///' + ($page -replace '\\', '/')
+    $profile = Join-Path $OutDir 'cdp-profile'
+    New-Item -ItemType Directory -Path $profile -Force | Out-Null
+    $fgBefore = Get-ForegroundHwnd
+    $proc = Start-Process -FilePath $edge -ArgumentList @(
+        '--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
+        ('--user-data-dir=' + $profile), ('--remote-debugging-port=' + $port), $url
+    ) -WindowStyle Hidden -PassThru
+    try {
+        $ready = $false
+        for ($i = 0; $i -lt 24; $i++) {
+            Start-Sleep -Milliseconds 500
+            $list = (& node $CdpJs $port list 2>&1) -join "`n"
+            if ($LASTEXITCODE -eq 0 -and $list -match 'winhand-cdp-sandbox') { $ready = $true; break }
+        }
+        if (-not $ready) {
+            return [pscustomobject]@{ Status = 'skip'; Detail = '无头 Edge CDP 12 秒内未就绪'; Evidence = @() }
+        }
+        $wait = (& node $CdpJs $port wait auto 'text:提交并落盘' 10 2>&1) -join "`n"
+        $write = (& node $CdpJs $port text auto '#name' 'CDP写入-20260914' 2>&1) -join "`n"
+        $click = (& node $CdpJs $port click auto '#go' 2>&1) -join "`n"
+        $eval = (& node $CdpJs $port eval auto "document.querySelector('#state').textContent" 2>&1) -join "`n"
+        $png = Join-Path $Shots 'cdp-sandbox.png'
+        $shot = (& node $CdpJs $port shot auto $png 2>&1) -join "`n"
+        $fgAfter = Get-ForegroundHwnd
+        $stateOk = $eval -match 'state=saved:CDP'
+        $ok = $stateOk -and (Test-Path -LiteralPath $png) -and ($fgBefore -eq $fgAfter)
+        [pscustomobject]@{
+            Status = $(if ($ok) { 'pass' } else { 'fail' })
+            Detail = ('CDP端口={0} wait={1} 写值+点击+读回={2} 截图={3} 前台未变={4}' -f $port, ($wait -match 'satisfied|ok'), $stateOk, (Test-Path -LiteralPath $png), ($fgBefore -eq $fgAfter))
+            Evidence = @($png)
+        }
+    }
+    finally {
+        Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
+            Where-Object { $_.CommandLine -and $_.CommandLine -like ('*' + $profile + '*') } |
+            ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+        Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+    }
 }
 
 }
@@ -441,8 +550,33 @@ if (-not $SkipProbe) {
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     $found = 0
     $probeErrors = 0
+    $raw = @{}
+    $batchSize = 6
+    for ($i = 0; $i -lt $apps.Count; $i += $batchSize) {
+        $chunk = @($apps[$i..([Math]::Min($i + $batchSize - 1, $apps.Count - 1))])
+        $running = @()
+        foreach ($app in $chunk) {
+            $outFile = Join-Path $OutDir ('probe-' + $app + '.out.txt')
+            $errFile = Join-Path $OutDir ('probe-' + $app + '.err.txt')
+            Remove-Item -LiteralPath $outFile, $errFile -Force -ErrorAction SilentlyContinue
+            $p = Start-Process -FilePath 'powershell.exe' -ArgumentList @(
+                '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $Probe, $app
+            ) -RedirectStandardOutput $outFile -RedirectStandardError $errFile -WindowStyle Hidden -PassThru
+            $running += [pscustomobject]@{ App = $app; Proc = $p; Out = $outFile; Err = $errFile }
+        }
+        foreach ($j in $running) {
+            $exited = $j.Proc.WaitForExit(240000)
+            if (-not $exited) { Stop-Process -Id $j.Proc.Id -Force -ErrorAction SilentlyContinue }
+            $outText = $(if (Test-Path -LiteralPath $j.Out) { [System.IO.File]::ReadAllText($j.Out, [System.Text.Encoding]::UTF8) } else { '' })
+            $errText = $(if (Test-Path -LiteralPath $j.Err) { [System.IO.File]::ReadAllText($j.Err, [System.Text.Encoding]::UTF8) } else { '' })
+            $raw[$j.App] = [pscustomobject]@{
+                Text = ($outText + "`n" + $errText)
+                Exit = $(if ($exited) { $j.Proc.ExitCode } else { 124 })
+            }
+        }
+    }
     foreach ($app in $apps) {
-        $r = Invoke-Probe $app
+        $r = $raw[$app]
         $hasError = $r.Text -match 'Unexpected token|ParserError|CategoryInfo'
         $isFound = (-not $hasError) -and (-not ($r.Text -match '找不到应用'))
         if ($hasError) { $probeErrors++ }
@@ -460,7 +594,7 @@ if (-not $SkipProbe) {
             chromium = $chromium
             cdp = $cdp
             note = $note
-            exit_code = $r.Code
+            exit_code = $r.Exit
             raw = $r.Text
         }) | Out-Null
     }

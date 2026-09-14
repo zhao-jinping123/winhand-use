@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>winhand-cdp-sandbox</title>
+  <style>
+    body { font-family: "Microsoft YaHei UI", sans-serif; background: #1c1e26; color: #e8ecf4; padding: 40px; }
+    input { width: 320px; padding: 10px; font-size: 16px; }
+    button { padding: 10px 18px; font-size: 16px; margin-left: 12px; }
+    #state { margin-top: 24px; font-size: 18px; color: #7fdca0; }
+  </style>
+</head>
+<body>
+  <h2>winhand-use CDP sandbox</h2>
+  <input id="name" placeholder="姓名">
+  <button id="go">提交并落盘</button>
+  <div id="state">state=idle</div>
+  <script>
+    document.getElementById('go').addEventListener('click', function () {
+      document.getElementById('state').textContent =
+        'state=saved:' + document.getElementById('name').value;
+    });
+  </script>
+</body>
+</html>

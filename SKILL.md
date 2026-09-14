@@ -89,7 +89,8 @@ cdp.js <端口> list|snapshot|find|wait|mouse|insert|press|shot|eval|act   （�
 
 跨框架（Claude Code / Codex / Cursor / Kimi Code / ZCode / Hermes / DeepSeek harness 等）：本技能只依赖
 `powershell.exe` + 系统 API，任何能读 SKILL.md、能执行 shell 的 agent 都能用；退出码三态 0/1/2 是给框架的
-判断信号。安装位置、首次自检、已知坑 → [references/多框架适配.md](references/多框架适配.md)。
+判断信号。MCP 客户端可直接启动 `mcp/server.js`（18 个工具，零依赖）。安装位置、首次自检、已知坑 →
+[references/多框架适配.md](references/多框架适配.md)。
 
 目标写法：`0x…`=hwnd（最稳）、纯数字=pid、关键词=owner/标题模糊匹配（多候选会列出来让你挑）。`fg`=当前前台窗口。窗口 id/pid 是易腐信息，重启即变，只用于当轮。
 

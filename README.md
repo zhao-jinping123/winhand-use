@@ -34,10 +34,10 @@
 - 端到端沙盒操控：双输入框窗口精确写入指定框 → UIA 触发按钮 → 副作用文件落盘，全程零焦点
 - 退出码三态（0/1/2）供 agent 框架判断
 
-2026-09-13 公开基准（Windows 11 26200 / PowerShell 5.1）：
+2026-09-14 公开基准（Windows 11 26200 / PowerShell 5.1）：
 
-- **9 pass / 0 fail / 1 skip**；跳过项是用户已有记事本进程，避免打扰
-- 沙箱场景：`see` / `axset` / `axpress` / 遮挡截图 / `--dry` 预演全部通过，动作前后前台窗口均未变化
+- **10 pass / 0 fail / 1 skip**；跳过项是用户已有记事本进程，避免打扰
+- 沙箱场景：`see` / `axset` / `axpress` / 遮挡截图 / `--dry` 预演 / L0 CDP 全链路全部通过
 - 真实应用：资源管理器桌面、计算器、画图均通过后台截图 + UIA 可读
 - 常用软件探测：11/12 可解析，5 个 Chromium 系，1 个已开 CDP 端口
 - 复现命令与样本：见 [benchmarks/README.md](benchmarks/README.md)，样本报告在 `benchmarks/results/sample/`
@@ -110,6 +110,27 @@ winhand op <目标> 100 200 "文本" @截图.png --dry
 
 完整命令表、四层控制面详解、停手线、取证回流规则见 `SKILL.md` 与 `references/`。
 
+## MCP Server（给 MCP 客户端）
+
+不想装 skill、只想让 Agent 直接调用工具？仓库自带零依赖 MCP Server，
+把 18 个 Windows 操控工具通过 stdio 暴露给 Claude Code / Cursor / Codex / Claude Desktop 等客户端：
+
+```powershell
+# 自测（initialize → tools/list → tools/call win_doctor）
+node mcp\selftest.js
+```
+
+Codex 配置（`~/.codex/config.toml`）：
+
+```toml
+[mcp_servers.winhand]
+command = "node"
+args = ["C:/Users/<你>/.codex/skills/winhand-use/mcp/server.js"]
+startup_timeout_sec = 60
+```
+
+工具列表、Claude/Cursor 配置和超时/输出上限环境变量见 [mcp/README.md](mcp/README.md)。
+
 ## 停手线（摘要）
 
 发布/付款/删除/覆盖保存等不可逆动作、终端回车、UAC 弹窗、银行/券商/医疗/政务界面——一律交还用户，不绕。
@@ -148,6 +169,7 @@ winhand-use/
 │   └── cdp.js               # 内嵌 Chromium 的 CDP 工具（复用 huashu-mac-use）
 ├── benchmarks/              # 公开基准：沙箱靶标 + 真实应用场景 + 常用软件探测矩阵
 ├── assets/                  # demo.gif / demo.mp4 演示素材
+├── mcp/                     # 零依赖 MCP Server（18 个工具 + 自测）
 └── references/
     ├── 控制面详解.md / 权限与故障.md / app档案.md
     ├── 取证规范.md / 踩坑实录.md / 多框架适配.md

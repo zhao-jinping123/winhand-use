@@ -1,6 +1,6 @@
 ﻿{
     "schema":  "winhand-benchmark/1",
-    "generated_at":  "2026-09-13T00:19:42.0048896+08:00",
+    "generated_at":  "2026-09-14T11:33:46.8615756+08:00",
     "machine":  {
                     "os":  "Microsoft Windows 11 家庭版 中文版 10.0.26200",
                     "powershell":  "5.1.26100.9444",
@@ -9,14 +9,14 @@
                 },
     "skill":  {
                   "repo":  "C:\\Users\\赵晋平\\.codex\\skills\\winhand-use",
-                  "commit":  "8970c7e"
+                  "commit":  "25585e1"
               },
     "summary":  {
-                    "pass":  9,
+                    "pass":  10,
                     "fail":  0,
                     "skip":  1,
-                    "total":  10,
-                    "duration_ms":  440407
+                    "total":  11,
+                    "duration_ms":  1345098
                 },
     "scenarios":  [
                       {
@@ -24,17 +24,17 @@
                           "layer":  "L1",
                           "status":  "pass",
                           "detail":  "截图=True black=0.553 editable=2 UIA含双输入框=True 前台未变=True",
-                          "duration_ms":  28073,
+                          "duration_ms":  137254,
                           "evidence":  [
-                                           "C:\\Users\\赵晋平\\.codex\\skills\\winhand-use\\benchmarks\\results\\20260913-001220\\shots\\sandbox-form-32092.png"
+                                           "C:\\Users\\赵晋平\\.codex\\skills\\winhand-use\\benchmarks\\results\\20260914-111121\\shots\\sandbox-form-33464.png"
                                        ]
                       },
                       {
                           "id":  "sandbox.axset",
                           "layer":  "L1",
                           "status":  "pass",
-                          "detail":  "selector=e1 写回一致=True effect=confirmed=True 前台未变=True",
-                          "duration_ms":  44283,
+                          "detail":  "selector=e1 写回一致=True effect=confirmed=True 未借焦点=True 前台未变=True 用户活动=False idle_before=1674200ms idle_after=1770000ms",
+                          "duration_ms":  227573,
                           "evidence":  [
 
                                        ]
@@ -43,20 +43,20 @@
                           "id":  "sandbox.axpress",
                           "layer":  "L1",
                           "status":  "pass",
-                          "detail":  "button=e2 副作用落盘=True 内容一致=True 前台未变=True",
-                          "duration_ms":  55454,
+                          "detail":  "button=e2 副作用落盘=True 内容一致=True 未借焦点=True 前台未变=True 用户活动=False idle_before=1958300ms idle_after=1993600ms",
+                          "duration_ms":  223416,
                           "evidence":  [
-                                           "C:\\Users\\赵晋平\\.codex\\skills\\winhand-use\\benchmarks\\results\\20260913-001220\\sandbox-axpress.effect.txt"
+                                           "C:\\Users\\赵晋平\\.codex\\skills\\winhand-use\\benchmarks\\results\\20260914-111121\\sandbox-axpress.effect.txt"
                                        ]
                       },
                       {
                           "id":  "sandbox.occluded_shot",
                           "layer":  "L3",
                           "status":  "pass",
-                          "detail":  "遮挡下截图=True black=0.553 截图前后前台未变=True",
-                          "duration_ms":  48808,
+                          "detail":  "遮挡下截图=True size=1118x694 black=0.553 bytes=31127 截图前后前台未变=True",
+                          "duration_ms":  152581,
                           "evidence":  [
-                                           "C:\\Users\\赵晋平\\.codex\\skills\\winhand-use\\benchmarks\\results\\20260913-001220\\shots\\occluded-sandbox.png"
+                                           "C:\\Users\\赵晋平\\.codex\\skills\\winhand-use\\benchmarks\\results\\20260914-111121\\shots\\occluded-sandbox.png"
                                        ]
                       },
                       {
@@ -64,9 +64,19 @@
                           "layer":  "L2",
                           "status":  "pass",
                           "detail":  "dry预演可见=True 未执行副作用=True 前台未变=True exit=0",
-                          "duration_ms":  26003,
+                          "duration_ms":  61557,
                           "evidence":  [
 
+                                       ]
+                      },
+                      {
+                          "id":  "sandbox.cdp_flow",
+                          "layer":  "L0",
+                          "status":  "pass",
+                          "detail":  "CDP端口=9339 wait=True 写值+点击+读回=True 截图=True 前台未变=True",
+                          "duration_ms":  21307,
+                          "evidence":  [
+                                           "C:\\Users\\赵晋平\\.codex\\skills\\winhand-use\\benchmarks\\results\\20260914-111121\\shots\\cdp-sandbox.png"
                                        ]
                       },
                       {
@@ -74,9 +84,9 @@
                           "layer":  "L1/L3",
                           "status":  "pass",
                           "detail":  "桌面截图=True black=0.005 UIA可读=True",
-                          "duration_ms":  15993,
+                          "duration_ms":  43859,
                           "evidence":  [
-                                           "C:\\Users\\赵晋平\\.codex\\skills\\winhand-use\\benchmarks\\results\\20260913-001220\\shots\\explorer-desktop.png"
+                                           "C:\\Users\\赵晋平\\.codex\\skills\\winhand-use\\benchmarks\\results\\20260914-111121\\shots\\explorer-desktop.png"
                                        ]
                       },
                       {
@@ -84,7 +94,7 @@
                           "layer":  "L0/L1",
                           "status":  "skip",
                           "detail":  "用户已有记事本进程，跳过以避免干扰",
-                          "duration_ms":  17,
+                          "duration_ms":  46,
                           "evidence":  [
 
                                        ]
@@ -94,9 +104,9 @@
                           "layer":  "L1/L3",
                           "status":  "pass",
                           "detail":  "后台截图=True black=0.011 UIA元素=62",
-                          "duration_ms":  32024,
+                          "duration_ms":  92357,
                           "evidence":  [
-                                           "C:\\Users\\赵晋平\\.codex\\skills\\winhand-use\\benchmarks\\results\\20260913-001220\\shots\\calculator.png"
+                                           "C:\\Users\\赵晋平\\.codex\\skills\\winhand-use\\benchmarks\\results\\20260914-111121\\shots\\calculator.png"
                                        ]
                       },
                       {
@@ -104,9 +114,9 @@
                           "layer":  "L1/L3",
                           "status":  "pass",
                           "detail":  "后台截图=True black=0.001 UIA元素=101",
-                          "duration_ms":  36777,
+                          "duration_ms":  183851,
                           "evidence":  [
-                                           "C:\\Users\\赵晋平\\.codex\\skills\\winhand-use\\benchmarks\\results\\20260913-001220\\shots\\mspaint.png"
+                                           "C:\\Users\\赵晋平\\.codex\\skills\\winhand-use\\benchmarks\\results\\20260914-111121\\shots\\mspaint.png"
                                        ]
                       },
                       {
@@ -114,7 +124,7 @@
                           "layer":  "L0/L1",
                           "status":  "pass",
                           "detail":  "探测 11/12 可解析，探针错误=0，Chromium=5 CDP=1",
-                          "duration_ms":  152325,
+                          "duration_ms":  198727,
                           "evidence":  [
 
                                        ]
@@ -129,7 +139,7 @@
                              "chromium":  false,
                              "cdp":  false,
                              "note":  "",
-                             "exit_code":  0
+                             "exit_code":  null
                          },
                          {
                              "app":  "calc",
@@ -139,7 +149,7 @@
                              "chromium":  false,
                              "cdp":  false,
                              "note":  "",
-                             "exit_code":  0
+                             "exit_code":  null
                          },
                          {
                              "app":  "mspaint",
@@ -149,7 +159,7 @@
                              "chromium":  false,
                              "cdp":  false,
                              "note":  "",
-                             "exit_code":  0
+                             "exit_code":  null
                          },
                          {
                              "app":  "explorer",
@@ -159,7 +169,7 @@
                              "chromium":  false,
                              "cdp":  false,
                              "note":  "",
-                             "exit_code":  0
+                             "exit_code":  null
                          },
                          {
                              "app":  "msedge",
@@ -169,7 +179,7 @@
                              "chromium":  true,
                              "cdp":  true,
                              "note":  "",
-                             "exit_code":  0
+                             "exit_code":  null
                          },
                          {
                              "app":  "chrome",
@@ -179,7 +189,7 @@
                              "chromium":  true,
                              "cdp":  false,
                              "note":  "",
-                             "exit_code":  0
+                             "exit_code":  null
                          },
                          {
                              "app":  "Code",
@@ -189,7 +199,7 @@
                              "chromium":  false,
                              "cdp":  false,
                              "note":  "",
-                             "exit_code":  0
+                             "exit_code":  null
                          },
                          {
                              "app":  "Weixin",
@@ -199,7 +209,7 @@
                              "chromium":  true,
                              "cdp":  false,
                              "note":  "",
-                             "exit_code":  0
+                             "exit_code":  null
                          },
                          {
                              "app":  "DingTalk",
@@ -209,7 +219,7 @@
                              "chromium":  true,
                              "cdp":  false,
                              "note":  "",
-                             "exit_code":  0
+                             "exit_code":  null
                          },
                          {
                              "app":  "wps",
@@ -219,7 +229,7 @@
                              "chromium":  false,
                              "cdp":  false,
                              "note":  "",
-                             "exit_code":  0
+                             "exit_code":  null
                          },
                          {
                              "app":  "JianyingPro",
@@ -229,7 +239,7 @@
                              "chromium":  false,
                              "cdp":  false,
                              "note":  "未找到应用",
-                             "exit_code":  1
+                             "exit_code":  null
                          },
                          {
                              "app":  "Doubao",
@@ -239,7 +249,7 @@
                              "chromium":  true,
                              "cdp":  false,
                              "note":  "",
-                             "exit_code":  0
+                             "exit_code":  null
                          }
                      ]
 }

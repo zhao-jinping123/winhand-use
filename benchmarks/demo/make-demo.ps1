@@ -23,6 +23,7 @@ if (-not (Test-Path -LiteralPath $ResultDir)) { throw ('结果目录不存在: '
 $shots = Join-Path $ResultDir 'shots'
 $sandboxShot = Get-ChildItem -LiteralPath $shots -Filter 'sandbox-form-*.png' -ErrorAction SilentlyContinue | Select-Object -First 1
 $occludedShot = Get-ChildItem -LiteralPath $shots -Filter 'occluded-sandbox.png' -ErrorAction SilentlyContinue | Select-Object -First 1
+$cdpShot = Get-ChildItem -LiteralPath $shots -Filter 'cdp-sandbox.png' -ErrorAction SilentlyContinue | Select-Object -First 1
 $reportJson = Join-Path $ResultDir 'report.json'
 $summaryLine = '公开基准：8 pass / 0 fail / 1 skip'
 if (Test-Path -LiteralPath $reportJson) {
@@ -104,12 +105,21 @@ New-Slide (Join-Path $work 'slide3.png') {
 
 New-Slide (Join-Path $work 'slide4.png') {
     param($g)
-    Draw-Text $g $summaryLine 80 120 44 '#F5C76A' 'Bold'
-    Draw-Text $g '常用软件探测矩阵：12 个软件 · 5 个 Chromium · 1 个 CDP 端口' 80 230 26 '#E8ECF4'
-    Draw-Text $g '沙箱能力：see / axset / axpress / 遮挡截图 / dry 预演' 80 300 26 '#E8ECF4'
-    Draw-Text $g 'npx skills add zhao-jinping123/winhand-use' 80 420 26 '#7FDCA0'
-    Draw-Text $g 'github.com/zhao-jinping123/winhand-use' 80 480 26 '#9FB4D8'
-    Draw-Text $g '④ 可复现基准 + 跨 Agent 安装' 80 622 26 '#9FB4D8'
+    Draw-Text $g 'L0 CDP：内嵌 Chromium 零焦点操控' 80 54 42 '#F5C76A' 'Bold'
+    Draw-Text $g 'wait → 写值 → 点击 → 读回 state=saved → 截图' 80 118 24 '#E8ECF4'
+    Draw-ImageFit $g $(if ($cdpShot) { $cdpShot.FullName } else { '' }) 80 180 1120 460
+    Draw-Text $g '④ 无头浏览器全链路验证，不碰用户正在用的浏览器' 80 652 27 '#7FDCA0'
+}
+
+New-Slide (Join-Path $work 'slide5.png') {
+    param($g)
+    Draw-Text $g $summaryLine 80 110 44 '#F5C76A' 'Bold'
+    Draw-Text $g '控制层覆盖：L0 CDP · L1 UIA · L2 坐标预演 · L3 后台截图' 80 214 26 '#E8ECF4'
+    Draw-Text $g '常用软件探测：12 个软件 · 5 个 Chromium · 1 个 CDP 端口' 80 276 26 '#E8ECF4'
+    Draw-Text $g 'npx skills add zhao-jinping123/winhand-use' 80 372 26 '#7FDCA0'
+    Draw-Text $g 'MCP：node mcp/server.js（18 个工具）' 80 438 26 '#7FDCA0'
+    Draw-Text $g 'github.com/zhao-jinping123/winhand-use' 80 504 26 '#9FB4D8'
+    Draw-Text $g '⑤ 可复现基准 + Skill / MCP 双接入' 80 622 26 '#9FB4D8'
 }
 
 $mp4 = Join-Path $OutDir 'demo.mp4'
